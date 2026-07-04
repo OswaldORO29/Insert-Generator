@@ -1,29 +1,51 @@
 package com.equipo.insertgenerator.dto;
 
+import java.util.Map;
+
 public class ColumnInfo {
-    private String columnName;
-    private String dataType;
-    private String isNullable;
-    private String columnKey;
+    private String name;
+    private String type;
+    private boolean isPrimaryKey;
+    private boolean isForeignKey;
+    private boolean isAutoIncrement;
+    private boolean isNullable;
+    private Integer maxLength;
+    private Map<String, Object> restrictions; // maneja los CHECKs, ENUMs o info de FK
 
     // Constructor
-    public ColumnInfo(String columnName, String dataType, String isNullable, String columnKey) {
-        this.columnName = columnName;
-        this.dataType = dataType;
+    public ColumnInfo(String name, String type, boolean isPrimaryKey, boolean isForeignKey,
+                      boolean isAutoIncrement, boolean isNullable, Integer maxLength, Map<String, Object> restrictions) {
+        this.name = name;
+        this.type = type;
+        this.isPrimaryKey = isPrimaryKey;
+        this.isForeignKey = isForeignKey;
+        this.isAutoIncrement = isAutoIncrement;
         this.isNullable = isNullable;
-        this.columnKey = columnKey;
+        this.maxLength = maxLength;
+        this.restrictions = restrictions;
     }
 
-    // Getters y Setters
-    public String getColumnName() { return columnName; }
-    public void setColumnName(String columnName) { this.columnName = columnName; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public String getDataType() { return dataType; }
-    public void setDataType(String dataType) { this.dataType = dataType; }
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
 
-    public String getIsNullable() { return isNullable; }
-    public void setIsNullable(String isNullable) { this.isNullable = isNullable; }
+    public boolean getIsPrimaryKey() { return isPrimaryKey; }
+    public void setIsPrimaryKey(boolean isPrimaryKey) { this.isPrimaryKey = isPrimaryKey; }
 
-    public String getColumnKey() { return columnKey; }
-    public void setColumnKey(String columnKey) { this.columnKey = columnKey; }
+    public boolean getIsForeignKey() { return isForeignKey; }
+    public void setIsForeignKey(boolean isForeignKey) { this.isForeignKey = isForeignKey; }
+
+    public boolean getIsAutoIncrement() { return isAutoIncrement; }
+    public void setIsAutoIncrement(boolean isAutoIncrement) { this.isAutoIncrement = isAutoIncrement; }
+
+    public boolean getIsNullable() { return isNullable; }
+    public void setIsNullable(boolean isNullable) { this.isNullable = isNullable; }
+
+    public Integer getMaxLength() { return maxLength; }
+    public void setMaxLength(Integer maxLength) { this.maxLength = maxLength; }
+
+    public Map<String, Object> getRestrictions() { return restrictions; }
+    public void setRestrictions(Map<String, Object> restrictions) { this.restrictions = restrictions; }
 }
