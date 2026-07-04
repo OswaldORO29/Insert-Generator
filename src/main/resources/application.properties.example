@@ -1,0 +1,6 @@
+spring.datasource.url=jdbc:mysql://PON_AQUI_EL_HOST_DE_AIVEN:15872/defaultdb?useSSL=true&trustServerCertificate=true&allowPublicKeyRetrieval=true
+
+spring.datasource.username=avnadmin
+spring.datasource.password=PON_AQUI_TU_CONTRASENA_DE_AIVEN
+
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
