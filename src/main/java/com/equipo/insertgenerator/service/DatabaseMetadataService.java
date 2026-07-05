@@ -20,7 +20,7 @@ public class DatabaseMetadataService {
     }
 
     public List<ColumnInfo> obtenerEstructuraTabla(String tableName) {
-        // Traemos más metadatos
+
         String sql = "SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_KEY, CHARACTER_MAXIMUM_LENGTH, EXTRA " +
                 "FROM INFORMATION_SCHEMA.COLUMNS " +
                 "WHERE TABLE_SCHEMA = 'defaultdb' AND TABLE_NAME = ?";
@@ -35,10 +35,8 @@ public class DatabaseMetadataService {
             boolean isForeignKey = rs.getString("COLUMN_KEY").equalsIgnoreCase("MUL");
             boolean isAutoIncrement = rs.getString("EXTRA").toLowerCase().contains("auto_increment");
 
-            // Obteniene la longitud máxima
             Integer maxLength = rs.getObject("CHARACTER_MAXIMUM_LENGTH") != null ? rs.getInt("CHARACTER_MAXIMUM_LENGTH") : null;
 
-            // Construye el mapa de restricciones provisional
             Map<String, Object> restrictions = null;
             if (isForeignKey) {
                 restrictions = new HashMap<>();

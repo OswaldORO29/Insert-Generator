@@ -12,7 +12,7 @@ public class ColumnInfo {
     private Integer maxLength;
     private Map<String, Object> restrictions; // maneja los CHECKs, ENUMs o info de FK
 
-    // Constructor
+
     public ColumnInfo(String name, String type, boolean isPrimaryKey, boolean isForeignKey,
                       boolean isAutoIncrement, boolean isNullable, Integer maxLength, Map<String, Object> restrictions) {
         this.name = name;
