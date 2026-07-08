@@ -27,6 +27,7 @@ public class DataGenerationService {
     private AiDataGeneratorClient aiClient;
 
     private final Faker faker = new Faker(new Locale("es"));
+    private final java.text.SimpleDateFormat dateFormater = new java.text.SimpleDateFormat("yyyy-MM-dd");
 
     public GeneratedDataResponse generarDatos(List<ColumnInfo> columnas, int cantidad) {
 
@@ -106,7 +107,7 @@ public class DataGenerationService {
             case "TINYINT":
                 return faker.bool().bool();
             case "DATE":
-                return faker.date().birthday().toString();
+                return dateFormater.format(faker.date().birthday());
             case "DATETIME":
             case "TIMESTAMP":
                 return new java.sql.Timestamp(

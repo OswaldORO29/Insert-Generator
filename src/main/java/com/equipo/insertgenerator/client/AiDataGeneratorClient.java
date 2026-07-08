@@ -99,19 +99,17 @@ public class AiDataGeneratorClient {
         String columnasJson = mapper.writeValueAsString(columnas);
         String registrosJson = mapper.writeValueAsString(registros);
 
-        return "Eres un generador de datos sintéticos para pruebas de bases de datos.\n" +
-                "Te doy la estructura de columnas de una tabla y una lista de registros ya generados.\n" +
-                "Tu tarea:\n" +
-                "1. Revisa cada registro contra las restricciones de las columnas (CHECK, ENUM_VALUES, NOT NULL).\n" +
-                "2. Si un valor viola una restricción, corrígelo con un valor válido y coherente.\n" +
-                "3. Si un valor ya es válido, déjalo exactamente igual.\n" +
-                "4. No agregues ni quites columnas. No agregues ni quites registros.\n" +
-                "5. Responde ÚNICAMENTE con un arreglo JSON válido de registros. " +
-                "Sin texto adicional, sin explicaciones, sin backticks de markdown.\n\n" +
+        return "Eres un validador experto de datos sintéticos para bases de datos.\n" +
+                "Te doy la estructura de una tabla y una lista de registros base.\n\n" +
+                "REGLAS ESTRICTAS:\n" +
+                "1. Usa EXCLUSIVAMENTE valores realistas y lógicos (ej. 'Ingeniería en Software' para carreras, 'María López' para nombres, 'maria@email.com' para correos).\n" +
+                "2. Respeta estrictamente los tipos de datos y la longitud máxima indicada en la estructura.\n" +
+                "3. Asegúrate de que los valores generados sean variados y únicos para evitar errores de duplicidad en la base de datos.\n" +
+                "4. Si un valor ya es realista y cumple las reglas, déjalo intacto.\n" +
+                "5. Responde ÚNICAMENTE con el arreglo JSON válido. Cero texto adicional, cero formato markdown.\n\n" +
                 "Estructura de columnas:\n" + columnasJson + "\n\n" +
-                "Registros a revisar:\n" + registrosJson;
+                "Registros:\n" + registrosJson;
     }
-
     private String limpiarRespuestaJson(String texto) {
         if (texto == null) return "[]";
         return texto.replaceAll("```json", "")

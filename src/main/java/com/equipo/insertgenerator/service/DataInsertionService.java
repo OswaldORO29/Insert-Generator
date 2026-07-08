@@ -1,84 +1,118 @@
 package com.equipo.insertgenerator.service;
 
 import com.equipo.insertgenerator.dto.DataInsertionDTO;
+import com.equipo.insertgenerator.security.SecuritySanitizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Servicio encargado de la persistencia dinámica masiva en la base de datos.
+ * Toma los registros limpios provistos por el módulo de Faker/IA y construye
+ * consultas preparadas en caliente, mitigando riesgos de inyección SQL.
+ */
 @Service
 public class DataInsertionService {
+
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    public Map<String, Object> insertarRegistrosMasivos(String tableName, DataInsertionDTO insertionData) {
-        long startTime = System.currentTimeMillis();
+    /**
+     * Ejecuta la inserción de un lote de registros dentro de una transacción controlada.
+     * Si algunas filas fallan por restricciones de la BD, se reportan individualmente
+     * sin abortar el progreso general (Estatus: completed_with_errors).
+     */
+    @Transactional
+    public Map<String, Object> insertarLote(String nombreTabla, DataInsertionDTO solicitud) {
+        Map<String, Object> respuesta = new HashMap<>();
 
-        List<Map<String, Object>> records = insertionData.getRecords();
-        int insertedCount = 0;
-        int failedCount = 0;
-        List<Map<String, Object>> errors = new ArrayList<>();
-
-        if (records == null || records.isEmpty()) {
-            Map<String, Object> respuestaVacia = new HashMap<>();
-            respuestaVacia.put("status", "completed");
-            respuestaVacia.put("insertedCount", 0);
-            respuestaVacia.put("failedCount", 0);
-            respuestaVacia.put("executionTimeMs", 0);
-            respuestaVacia.put("errors", errors);
-            return respuestaVacia;
+        if (!SecuritySanitizer.esNombreIdentificadorSeguro(nombreTabla)) {
+            respuesta.put("status", "failed");
+            respuesta.put("insertedCount", 0);
+            respuesta.put("message", "Nombre de tabla inválido o malicioso.");
+            return respuesta;
         }
 
-        Map<String, Object> primerRegistro = records.get(0);
-        List<String> columnas = new ArrayList<>(primerRegistro.keySet());
+        List<Map<String, Object>> registros = solicitud.getRecords();
+        if (registros == null || registros.isEmpty()) {
+            respuesta.put("status", "empty");
+            respuesta.put("insertedCount", 0);
+            respuesta.put("message", "No se proporcionaron registros para insertar.");
+            return respuesta;
+        }
 
-        StringBuilder sql = new StringBuilder("INSERT INTO ").append(tableName).append(" (");
-        StringBuilder valoresComodines = new StringBuilder();
+        int insertadosConExito = 0;
+        List<Map<String, Object>> erroresDetallados = new ArrayList<>();
 
-        for (int i = 0; i < columnas.size(); i++) {
-            sql.append(columnas.get(i));
-            valoresComodines.append("?");
-            if (i < columnas.size() - 1) {
+        for (int i = 0; i < registros.size(); i++) {
+            Map<String, Object> registro = registros.get(i);
+
+            try {
+                ejecutarInsercionIndividual(nombreTabla, registro);
+                insertadosConExito++;
+            } catch (Exception e) {
+                Map<String, Object> infoError = new HashMap<>();
+                infoError.put("fila", i + 1);
+                infoError.put("error", e.getMessage());
+                erroresDetallados.add(infoError);
+            }
+        }
+
+        // 3. Estructurar el reporte de salida del Contrato 3
+        // Usamos el tamaño de la lista de registros que el backend acaba de generar e insertar
+        long totalSolicitado = registros.size();
+        respuesta.put("totalRequested", totalSolicitado);
+        respuesta.put("insertedCount", insertadosConExito);
+
+        if (insertadosConExito == totalSolicitado) {
+            respuesta.put("status", "completed");
+        } else if (insertadosConExito > 0) {
+            respuesta.put("status", "completed_with_errors");
+            respuesta.put("errors", erroresDetallados);
+        } else {
+            respuesta.put("status", "failed");
+            respuesta.put("errors", erroresDetallados);
+        }
+
+        return respuesta;
+    }
+
+    /**
+     * Construye y ejecuta un INSERT INTO dinámico utilizando consultas parametrizadas (?)
+     */
+    private void ejecutarInsercionIndividual(String tabla, Map<String, Object> registro) {
+        StringBuilder sql = new StringBuilder("INSERT INTO " + tabla + " (");
+        StringBuilder valoresComodines = new StringBuilder(") VALUES (");
+        List<Object> valoresParametros = new ArrayList<>();
+
+        // Construir dinámicamente las columnas y los comodines '?'
+        int contador = 0;
+        for (Map.Entry<String, Object> columna : registro.entrySet()) {
+            // Sanitizar cada nombre de columna antes de meterlo al String SQL
+            if (!SecuritySanitizer.esNombreIdentificadorSeguro(columna.getKey())) {
+                throw new IllegalArgumentException("Nombre de columna sospechoso detectado: " + columna.getKey());
+            }
+
+            if (contador > 0) {
                 sql.append(", ");
                 valoresComodines.append(", ");
             }
-        }
-        sql.append(") VALUES (").append(valoresComodines).append(")");
 
-        int numeroFila = 1;
-        for (Map<String, Object> registro : records) {
-            try {
-                Object[] valores = new Object[columnas.size()];
-                for (int i = 0; i < columnas.size(); i++) {
-                    valores[i] = registro.get(columnas.get(i));
-                }
-
-                jdbcTemplate.update(sql.toString(), valores);
-                insertedCount++;
-
-            } catch (Exception e) {
-                failedCount++;
-                Map<String, Object> errorDetalle = new HashMap<>();
-                errorDetalle.put("row", numeroFila);
-                errorDetalle.put("reason", e.getMessage());
-                errors.add(errorDetalle);
-            }
-            numeroFila++;
+            sql.append(columna.getKey());
+            valoresComodines.append("?");
+            valoresParametros.add(columna.getValue());
+            contador++;
         }
 
-        long endTime = System.currentTimeMillis();
+        sql.append(valoresComodines).append(")");
 
-        Map<String, Object> resultadoFinal = new HashMap<>();
-        resultadoFinal.put("status", failedCount == 0 ? "completed" : "completed_with_errors");
-        resultadoFinal.put("insertedCount", insertedCount);
-        resultadoFinal.put("failedCount", failedCount);
-        resultadoFinal.put("executionTimeMs", (endTime - startTime));
-        resultadoFinal.put("errors", errors);
-
-        return resultadoFinal;
+        // Ejecución segura parametrizada con JdbcTemplate (Previene Inyección SQL)
+        jdbcTemplate.update(sql.toString(), valoresParametros.toArray());
     }
 }
