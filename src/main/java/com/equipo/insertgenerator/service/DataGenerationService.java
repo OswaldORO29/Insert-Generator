@@ -1,5 +1,6 @@
 package com.equipo.insertgenerator.service;
 
+import com.equipo.insertgenerator.client.AiDataGeneratorClient;
 import com.equipo.insertgenerator.dto.ColumnInfo;
 import com.equipo.insertgenerator.dto.GeneratedDataResponse;
 import net.datafaker.Faker;

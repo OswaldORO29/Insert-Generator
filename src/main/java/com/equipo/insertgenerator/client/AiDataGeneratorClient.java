@@ -1,4 +1,4 @@
-package com.equipo.insertgenerator.service;
+package com.equipo.insertgenerator.client;
 
 import com.equipo.insertgenerator.dto.ColumnInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
